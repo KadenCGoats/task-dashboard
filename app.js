@@ -101,7 +101,7 @@ function currentVisibleTasks() {
   const query = document.querySelector('#task-search').value.trim().toLowerCase();
   let visible = tasks.filter((task) => {
     const matchesFilter = activeFilter === 'all' || dueFilter(task.dueDate) === activeFilter;
-    const matchesList = !activeList || (activeList === completedList ? task.done : task.list === activeList && !task.done);
+    const matchesList = activeList === completedList ? task.done : !task.done && (!activeList || task.list === activeList);
     const matchesSearch = !query || `${task.title} ${task.notes} ${task.list}`.toLowerCase().includes(query);
     return matchesFilter && matchesList && matchesSearch;
   });
@@ -214,7 +214,8 @@ function renderCalendar() {
 
 function render() {
   renderLists();
-  const tabCounts = { all: tasks.length, today: tasks.filter((task) => dueFilter(task.dueDate) === 'today').length, upcoming: tasks.filter((task) => dueFilter(task.dueDate) === 'upcoming').length };
+  const openTasks = tasks.filter((task) => !task.done);
+  const tabCounts = { all: openTasks.length, today: openTasks.filter((task) => dueFilter(task.dueDate) === 'today').length, upcoming: openTasks.filter((task) => dueFilter(task.dueDate) === 'upcoming').length };
   document.querySelectorAll('.tab').forEach((tab) => { tab.querySelector('span').textContent = tabCounts[tab.dataset.filter]; });
   const visibleTasks = currentVisibleTasks();
   renderCalendar();
