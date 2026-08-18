@@ -336,7 +336,15 @@ const authMessage = document.querySelector('#auth-message');
 const authError = document.querySelector('#auth-error');
 let isSignUp = false;
 
-document.querySelector('#close-auth').addEventListener('click', () => { authScreen.hidden = true; });
+document.querySelector('#close-auth').addEventListener('click', (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  authScreen.setAttribute('hidden', '');
+});
+
+authScreen.addEventListener('click', (event) => {
+  if (event.target === authScreen) authScreen.setAttribute('hidden', '');
+});
 
 function showAuth(message = 'Sign in to keep your tasks available on every device.') {
   authMessage.textContent = message;
