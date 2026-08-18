@@ -23,6 +23,9 @@ let listColors = {};
 lists = lists.filter((list) => list !== completedList);
 let activeFilter = 'all';
 let activeList = null;
+let activeWorkspace = 'overview';
+let calendarVisible = false;
+let workspaceNotes = JSON.parse(localStorage.getItem('task-dashboard-workspace-notes') || '{}');
 let editingId = null;
 const priorityRank = { high: 0, medium: 1, low: 2 };
 const taskList = document.querySelector('#task-list');
@@ -84,6 +87,14 @@ async function loadData() {
     listColors = Object.fromEntries((listResult.data || []).map((row) => [row.name, row.color]).filter((entry) => entry[1]));
   }
   lists = lists.filter((list, index) => lists.indexOf(list) === index);
+  const personalLists = ['Wishlist', 'Groceries'];
+  const missingPersonalLists = personalLists.filter((name) => !lists.includes(name));
+  if (missingPersonalLists.length) {
+    const { data, error } = await supabaseClient.from('lists').insert(missingPersonalLists.map((name, index) => ({ user_id: currentUser.id, name, color: defaultListColors[(lists.length + index) % defaultListColors.length] }))).select();
+    if (error) throw error;
+    missingPersonalLists.forEach((name) => { lists.push(name); });
+    (data || []).forEach((row) => { listColors[row.name] = row.color; });
+  }
 }
 
 function dateLabel(date) {
@@ -96,14 +107,16 @@ function dueFilter(date) { return date === today ? 'today' : date > today ? 'upc
 function escapeHtml(value) { return String(value || '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character])); }
 function formatDuration(minutes) { if (minutes < 60) return `${minutes}m`; const hours = Math.floor(minutes / 60); const remainder = minutes % 60; return remainder ? `${hours}h ${remainder}m` : `${hours}h`; }
 function getListColor(list, index = lists.indexOf(list)) { const storedColor = listColors[list]; if (/^#[0-9a-f]{6}$/i.test(storedColor || '')) return storedColor; return list === completedList ? '#5eaa82' : defaultListColors[(index < 0 ? 0 : index) % defaultListColors.length]; }
+function taskInWorkspace(task, workspace = activeWorkspace) { const logicalList = task.done ? (task.previousList || task.list) : task.list; return workspace === 'overview' || (workspace === 'work' ? logicalList === 'Work' : logicalList !== 'Work' && logicalList !== completedList); }
 
 function currentVisibleTasks() {
   const query = document.querySelector('#task-search').value.trim().toLowerCase();
   let visible = tasks.filter((task) => {
     const matchesFilter = activeFilter === 'all' || dueFilter(task.dueDate) === activeFilter;
+    const matchesWorkspace = taskInWorkspace(task);
     const matchesList = activeList === completedList ? task.done : !task.done && (!activeList || task.list === activeList);
     const matchesSearch = !query || `${task.title} ${task.notes} ${task.list}`.toLowerCase().includes(query);
-    return matchesFilter && matchesList && matchesSearch;
+    return matchesWorkspace && matchesFilter && matchesList && matchesSearch;
   });
   const sort = document.querySelector('#task-sort').value;
   if (sort === 'due') visible.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
@@ -114,10 +127,8 @@ function currentVisibleTasks() {
 
 function renderLists() {
   const listRows = lists.map((list, index) => `<div class="list-row"><label class="list-color-picker" style="background:${getListColor(list, index)}" title="Change ${escapeHtml(list)} color"><input type="color" value="${getListColor(list, index)}" data-color-list="${escapeHtml(list)}" aria-label="Change ${escapeHtml(list)} color"></label><button class="nav-item ${activeList === list ? 'active' : ''}" data-list="${escapeHtml(list)}">${escapeHtml(list)} <b>${tasks.filter((task) => task.list === list && !task.done).length}</b></button><button class="list-edit" data-edit-list="${escapeHtml(list)}" aria-label="Rename ${escapeHtml(list)}">✎</button><button class="list-delete" data-delete-list="${escapeHtml(list)}" aria-label="Delete ${escapeHtml(list)}">×</button></div>`).join('');
-  const completedCount = tasks.filter((task) => task.done).length;
   document.querySelector('#list-nav').innerHTML = listRows;
-  document.querySelector('#completed-nav-count').textContent = completedCount;
-  document.querySelectorAll('[data-list]').forEach((item) => item.addEventListener('click', () => { activeList = item.dataset.list; activeFilter = 'all'; setCalendarVisibility(false); setActiveTab('all'); render(); }));
+  document.querySelectorAll('[data-list]').forEach((item) => item.addEventListener('click', () => { activeList = item.dataset.list; activeWorkspace = item.dataset.list === 'Work' ? 'work' : 'personal'; activeFilter = 'all'; setCalendarVisibility(false); setActiveTab('all'); render(); }));
   document.querySelectorAll('[data-color-list]').forEach((input) => input.addEventListener('input', () => setListColor(input.dataset.colorList, input.value)));
   document.querySelectorAll('[data-edit-list]').forEach((item) => item.addEventListener('click', (event) => { event.stopPropagation(); openListEditor(item.dataset.editList); }));
   document.querySelectorAll('[data-delete-list]').forEach((item) => item.addEventListener('click', (event) => { event.stopPropagation(); deleteList(item.dataset.deleteList); }));
@@ -191,7 +202,8 @@ function renderCalendar() {
   const monthName = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(calendarDate);
   document.querySelector('#calendar-month').textContent = monthName;
   const listFilter = document.querySelector('#calendar-list-filter');
-  listFilter.innerHTML = [`<option value="all">All lists</option>`, ...lists.map((list) => `<option value="${escapeHtml(list)}">${escapeHtml(list)}</option>`), `<option value="${completedList}">${completedList}</option>`].join('');
+  const workspaceTasks = tasks.filter((task) => taskInWorkspace(task));
+  listFilter.innerHTML = [`<option value="all">All ${activeWorkspace === 'overview' ? 'workspaces' : activeWorkspace}</option>`, ...lists.filter((list) => workspaceTasks.some((task) => task.list === list)).map((list) => `<option value="${escapeHtml(list)}">${escapeHtml(list)}</option>`), `<option value="${completedList}">${completedList}</option>`].join('');
   listFilter.value = calendarListFilter;
   const firstDay = new Date(year, month, 1);
   const startOffset = (firstDay.getDay() + 6) % 7;
@@ -202,7 +214,7 @@ function renderCalendar() {
     const date = new Date(year, month, index - startOffset + 1);
     const dateKey = calendarDateKey(date);
     const inMonth = date.getMonth() === month;
-    const dayTasks = tasks.filter((task) => task.dueDate === dateKey && (calendarListFilter === 'all' || task.list === calendarListFilter || (calendarListFilter === completedList && task.done)));
+    const dayTasks = tasks.filter((task) => task.dueDate === dateKey && taskInWorkspace(task) && (calendarListFilter === 'all' || task.list === calendarListFilter || (calendarListFilter === completedList && task.done)));
     if (inMonth) monthTaskCount += dayTasks.length;
     const taskMarkup = dayTasks.map((task) => `<button class="calendar-task ${task.done ? 'done' : ''}" style="--task-color:${getListColor(task.list)}" data-calendar-toggle="${task.id}" title="${escapeHtml(task.title)}">${escapeHtml(task.title)}</button>`).join('');
     return `<div class="calendar-day ${inMonth ? '' : 'other-month'} ${dateKey === today ? 'today' : ''}"><span class="calendar-number">${date.getDate()}</span>${taskMarkup}</div>`;
@@ -214,26 +226,30 @@ function renderCalendar() {
 
 function render() {
   renderLists();
-  const openTasks = tasks.filter((task) => !task.done);
+  const workspaceTasks = tasks.filter((task) => taskInWorkspace(task));
+  const openTasks = workspaceTasks.filter((task) => !task.done);
   const tabCounts = { all: openTasks.length, today: openTasks.filter((task) => dueFilter(task.dueDate) === 'today').length, upcoming: openTasks.filter((task) => dueFilter(task.dueDate) === 'upcoming').length };
   document.querySelectorAll('.tab').forEach((tab) => { tab.querySelector('span').textContent = tabCounts[tab.dataset.filter]; });
   const visibleTasks = currentVisibleTasks();
   renderCalendar();
   taskList.innerHTML = visibleTasks.length ? visibleTasks.map((task) => `<div class="task-row ${task.done ? 'done' : ''} ${task.dueDate < today && !task.done ? 'overdue' : ''}"><button class="check" data-toggle="${task.id}" aria-label="${task.done ? 'Mark incomplete' : 'Mark complete'}">${task.done ? '✓' : ''}</button><button class="task-info" data-description-toggle="${task.id}" aria-expanded="false" aria-label="Show description for ${escapeHtml(task.title)}"><span class="task-title">${escapeHtml(task.title)}</span><span class="task-meta"><span><i class="priority ${task.priority}" style="background:${getListColor(task.list)}"></i>${escapeHtml(task.list)}</span><span>${task.priority} priority</span>${task.estimate ? `<span>${task.estimate}m</span>` : ''}</span><span class="task-description">${escapeHtml(task.notes || 'No description added.')}</span></button><span class="task-date">${dateLabel(task.dueDate)}</span><button class="task-action edit-task" data-edit="${task.id}" aria-label="Edit ${escapeHtml(task.title)}">✎</button><button class="task-action delete-task" data-delete="${task.id}" aria-label="Delete ${escapeHtml(task.title)}">×</button></div>`).join('') : '<div class="empty-state">No tasks match this view.</div>';
-  const open = tasks.filter((task) => !task.done).length;
-  document.querySelector('#task-caption').textContent = activeList ? `${visibleTasks.length} tasks in ${activeList}` : `${open} open tasks across all lists`;
+  const open = openTasks.length;
+  const workspaceLabel = activeWorkspace[0].toUpperCase() + activeWorkspace.slice(1);
+  document.querySelector('#workspace-title').textContent = workspaceLabel;
+  document.querySelector('#tasks-heading').textContent = `${workspaceLabel} tasks`;
+  document.querySelector('#task-caption').textContent = activeList ? `${visibleTasks.length} tasks in ${activeList}` : `${open} open tasks in ${workspaceLabel}`;
   document.querySelector('#open-total').textContent = open;
-  document.querySelector('#today-total').textContent = tasks.filter((task) => dueFilter(task.dueDate) === 'today' && !task.done).length;
-  const completedTasks = tasks.filter((task) => task.completedAt);
+  document.querySelector('#today-total').textContent = workspaceTasks.filter((task) => dueFilter(task.dueDate) === 'today' && !task.done).length;
+  const completedTasks = workspaceTasks.filter((task) => task.completedAt);
   document.querySelector('#completed-total').textContent = completedTasks.length;
-  document.querySelector('#inbox-count').textContent = tasks.filter((task) => dueFilter(task.dueDate) === 'today' && !task.done).length;
-  const remainingToday = tasks.filter((task) => dueFilter(task.dueDate) === 'today' && !task.done);
+  const remainingToday = workspaceTasks.filter((task) => dueFilter(task.dueDate) === 'today' && !task.done);
   const focusMinutes = remainingToday.reduce((total, task) => total + (Number(task.estimate) || 0), 0);
   document.querySelector('#focus-time-total').textContent = formatDuration(focusMinutes);
   document.querySelector('#focus-time-caption').textContent = `${remainingToday.length} task${remainingToday.length === 1 ? '' : 's'} left today`;
   document.querySelector('#focus-time-progress').style.width = `${Math.min(100, Math.round((focusMinutes / 300) * 100))}%`;
   renderFocusList(remainingToday.filter((task) => task.priority === 'high'));
-  renderWeeklyProgress(completedTasks);
+  renderNotes();
+  renderWorkdayProgress(workspaceTasks);
   document.querySelectorAll('[data-toggle]').forEach((button) => button.addEventListener('click', () => toggleTask(Number(button.dataset.toggle))));
   document.querySelectorAll('[data-description-toggle]').forEach((item) => item.addEventListener('click', () => {
     const expanded = item.getAttribute('aria-expanded') === 'true';
@@ -247,13 +263,27 @@ function renderFocusList(tasksToFocus) {
   document.querySelector('#focus-list').innerHTML = tasksToFocus.length ? tasksToFocus.map((task) => `<div class="focus-item"><span class="priority-dot high"></span><div><strong>${escapeHtml(task.title)}</strong><small>${escapeHtml(task.list)} · Due today</small></div><span class="focus-time">${task.estimate ? `${task.estimate}m` : 'No estimate'}</span></div>`).join('') : '<div class="empty-state">No high-priority tasks due today.</div>';
 }
 
-function renderWeeklyProgress(completedTasks) {
-  const counts = Object.fromEntries([...document.querySelectorAll('.bars i')].map((bar) => [bar.dataset.day, 0]));
-  completedTasks.forEach((task) => { const completedDate = task.completedAt.slice(0, 10); if (completedDate in counts) counts[completedDate] += 1; });
-  const maxCount = Math.max(1, ...Object.values(counts));
-  document.querySelectorAll('.bars i').forEach((bar) => { bar.style.height = `${counts[bar.dataset.day] ? Math.max(12, (counts[bar.dataset.day] / maxCount) * 100) : 0}%`; });
-  document.querySelector('#weekly-completed-total').textContent = Object.values(counts).reduce((total, count) => total + count, 0);
-  document.querySelector('#weekly-completed-change').textContent = completedTasks.length ? 'Tracked this week' : 'Start tracking';
+function renderNotes() {
+  const notes = document.querySelector('#workspace-notes');
+  const noteMarkup = (workspace) => `<label class="workspace-note"><span>${workspace[0].toUpperCase() + workspace.slice(1)}</span><textarea data-workspace-note="${workspace}" rows="3" placeholder="Write a note for ${workspace}...">${escapeHtml(workspaceNotes[workspace] || '')}</textarea></label>`;
+  notes.innerHTML = activeWorkspace === 'overview' ? `${noteMarkup('work')}${noteMarkup('personal')}` : noteMarkup(activeWorkspace);
+  notes.querySelectorAll('[data-workspace-note]').forEach((input) => input.addEventListener('input', () => { workspaceNotes[input.dataset.workspaceNote] = input.value; localStorage.setItem('task-dashboard-workspace-notes', JSON.stringify(workspaceNotes)); }));
+}
+
+function renderWorkdayProgress(workspaceTasks) {
+  const total = workspaceTasks.length;
+  const completed = workspaceTasks.filter((task) => task.done).length;
+  const percent = total ? Math.round((completed / total) * 100) : 0;
+  const now = new Date();
+  const centralTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  const start = new Date(centralTime); start.setHours(8, 0, 0, 0);
+  const end = new Date(centralTime); end.setHours(16, 0, 0, 0);
+  const remainingMinutes = Math.max(0, Math.round((end - centralTime) / 60000));
+  const minutesLabel = remainingMinutes >= 60 ? `${Math.floor(remainingMinutes / 60)}h ${remainingMinutes % 60}m left` : `${remainingMinutes}m left`;
+  document.querySelector('#completion-percent').textContent = `${percent}%`;
+  document.querySelector('#completion-progress').style.width = `${percent}%`;
+  document.querySelector('#workday-time-left').textContent = centralTime < start ? 'Starts at 8:00 AM' : centralTime >= end ? 'Workday complete' : minutesLabel;
+  document.querySelector('#workday-caption').textContent = `${completed} of ${total} task${total === 1 ? '' : 's'} completed`;
 }
 
 async function toggleTask(id) {
@@ -290,7 +320,17 @@ function openEditor(id = null) {
 }
 
 document.querySelectorAll('.tab').forEach((tab) => tab.addEventListener('click', () => { activeFilter = tab.dataset.filter; activeList = null; setCalendarVisibility(false); setActiveTab(activeFilter); render(); }));
-document.querySelectorAll('[data-view]').forEach((item) => item.addEventListener('click', () => { document.querySelectorAll('[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === item.dataset.view)); const isCalendar = item.dataset.view === 'calendar'; activeFilter = item.dataset.view === 'inbox' ? 'today' : item.dataset.view === 'upcoming' ? 'upcoming' : 'all'; activeList = item.dataset.view === 'completed' ? completedList : null; setCalendarVisibility(isCalendar); setActiveTab(activeFilter); render(); }));
+document.querySelectorAll('[data-view]').forEach((item) => item.addEventListener('click', () => {
+  document.querySelectorAll('[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === item.dataset.view));
+  activeWorkspace = item.dataset.view === 'work' || item.dataset.view === 'personal' ? item.dataset.view : 'overview';
+  activeFilter = 'all';
+  activeList = null;
+  calendarListFilter = 'all';
+  setCalendarVisibility(false);
+  setActiveTab(activeFilter);
+  render();
+}));
+document.querySelector('#calendar-toggle').addEventListener('click', () => { calendarVisible = !calendarVisible; setCalendarVisibility(calendarVisible); document.querySelector('#calendar-toggle').textContent = calendarVisible ? 'Tasks' : 'Calendar'; renderCalendar(); });
 document.querySelector('#calendar-prev').addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() - 1); renderCalendar(); });
 document.querySelector('#calendar-next').addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() + 1); renderCalendar(); });
 document.querySelector('#calendar-list-filter').addEventListener('change', (event) => { calendarListFilter = event.target.value; renderCalendar(); });

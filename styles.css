@@ -10,6 +10,8 @@
 .auth-error{min-height:18px;margin:14px 0 0;color:var(--coral-dark);font-size:12px}
 .account-button{min-height:34px;padding:0 14px;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--ink);font-size:11px;font-weight:700}.account-button:hover{border-color:var(--coral);color:var(--coral-dark)}
 .mobile-nav{display:none}
+.panel-tools{display:flex;align-items:center;gap:10px}.calendar-toggle{padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--muted);font-size:10px}.calendar-toggle:hover{color:var(--ink);background:var(--mint)}
+.workspace-note{display:grid;gap:7px;padding:0 14px 14px;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}.workspace-note textarea{width:100%;min-height:70px;resize:vertical;padding:10px 11px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);font:12px/1.45 'DM Sans',sans-serif;text-transform:none;letter-spacing:0;outline-color:var(--coral)}.workday-progress{padding:0 14px 16px}.workday-progress-top{display:flex;justify-content:space-between;align-items:baseline;color:var(--muted);font-size:11px}.workday-progress-top strong{color:var(--ink);font:800 28px 'Syne',sans-serif}.progress-track{height:8px;margin:12px 0 8px;overflow:hidden;border-radius:8px;background:var(--line)}.progress-track i{display:block;width:0;height:100%;border-radius:inherit;background:var(--coral);transition:width .3s ease}.workday-progress p{margin:0;color:var(--muted);font-size:10px}
 @media (max-width:760px){
 	body{padding-bottom:76px}
 	.app-shell{display:block;min-height:100vh}
