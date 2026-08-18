@@ -6,7 +6,7 @@
   <meta name="description" content="A focused dashboard for planning and tracking tasks.">
   <title>Task dashboard</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=7">
   <style>
     .search-box{display:flex;align-items:center;gap:7px;width:190px;height:34px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:#9ba5a1}.search-box input{width:100%;border:0;outline:0;background:transparent;color:var(--ink);font-size:11px}.search-box input::placeholder{color:#a5afab}.import-button{position:relative;overflow:hidden}.import-button input{position:absolute;inset:0;opacity:0;cursor:pointer}.sort-control{display:flex;align-items:center;gap:7px;color:#9ba5a1;font-size:10px}.sort-control select{border:0;background:transparent;color:var(--ink);font-size:11px;outline:0}.task-action{display:none;width:25px;height:25px;background:#f5f7f4;color:#9da7a4;border-radius:5px;font-size:13px;padding:0}.task-row:hover .task-action{display:grid;place-items:center}.task-action:hover{color:var(--coral);background:#f9e9e5}.task-info{position:relative;display:block;flex:1;min-width:0;padding:0;background:transparent;text-align:left}.task-description{display:none;position:absolute;z-index:3;top:calc(100% + 7px);left:0;width:min(320px, calc(100vw - 40px));padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel);box-shadow:var(--shadow);color:var(--muted);font-size:11px;line-height:1.45;white-space:normal}.task-info:hover .task-description,.task-info:focus-visible .task-description,.task-info[aria-expanded="true"] .task-description{display:block}.task-row:has(.task-info:hover),.task-row:has(.task-info:focus-visible){position:relative;z-index:2}.task-row.overdue .task-date{color:var(--coral-dark);font-weight:700}.empty-state{padding:35px 0;color:#a1aaa7;text-align:center;font-size:12px}.task-dialog textarea{resize:vertical;min-height:62px;width:100%;display:block;margin-top:7px;border:1px solid var(--line);border-radius:6px;padding:11px 12px;color:var(--ink);background:#fbfcfa;outline-color:var(--coral);font-size:12px;font-family:inherit}.field-hint{font-size:10px;font-weight:400;color:#a1aaa7}.task-dialog input[type=number]{appearance:textfield}@media(max-width:650px){.search-box{width:35px;border:0;background:transparent;padding:0}.search-box span{font-size:21px}.search-box input{position:absolute;right:115px;width:150px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:9px;display:none}.search-box:focus-within input{display:block}.sort-control{font-size:0}.sort-control select{font-size:11px}.task-action{display:grid;place-items:center}.top-actions{gap:4px}}
   </style>
@@ -104,6 +104,6 @@
     @media (max-width:760px){.calendar-actions{flex-wrap:wrap;justify-content:flex-end}.calendar-actions .sort-control{width:100%;justify-content:flex-end;margin-left:0}.calendar-day{min-height:90px;padding:5px}.calendar-weekdays span{padding:0 4px 7px;font-size:9px}.calendar-task{font-size:9px;padding:3px}.calendar-task span{display:none}}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>
