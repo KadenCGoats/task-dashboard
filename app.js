@@ -336,6 +336,8 @@ const authMessage = document.querySelector('#auth-message');
 const authError = document.querySelector('#auth-error');
 let isSignUp = false;
 
+document.querySelector('#close-auth').addEventListener('click', () => { authScreen.hidden = true; });
+
 function showAuth(message = 'Sign in to keep your tasks available on every device.') {
   authMessage.textContent = message;
   authError.textContent = '';
