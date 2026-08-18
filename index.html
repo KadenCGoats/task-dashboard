@@ -87,6 +87,13 @@
         </div>
       </div>
     </main>
+    <nav class="mobile-nav" aria-label="Mobile navigation">
+      <button class="mobile-nav-item active" data-view="overview"><span>⌂</span>Home</button>
+      <button class="mobile-nav-item" data-view="inbox"><span>□</span>Tasks</button>
+      <button class="mobile-nav-add" id="mobile-open-add" aria-label="Add a task">+</button>
+      <button class="mobile-nav-item" data-view="calendar"><span>▦</span>Calendar</button>
+      <button class="mobile-nav-item" id="mobile-theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false"><span>◐</span>Theme</button>
+    </nav>
   </div>
 
   <dialog class="task-dialog" id="task-dialog"><form method="dialog" id="task-form"><div class="dialog-header"><div><p class="eyebrow">Task details</p><h2 id="dialog-title">What needs doing?</h2></div><button class="icon-button" value="cancel" aria-label="Close dialog">×</button></div><label>Task name<input id="task-name" name="task" type="text" placeholder="e.g. Send project update" required></label><div class="form-row"><label>List<select id="task-list-select"></select></label><label>Due date<input id="task-due" type="date" required></label></div><label>Priority<select id="task-priority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></label><label>Notes<textarea id="task-notes" rows="3" placeholder="Add useful context"></textarea></label><label>Estimate <span class="field-hint">minutes</span><input id="task-estimate" type="number" min="5" step="5" placeholder="30"></label><button class="primary-button dialog-submit" id="dialog-submit" value="default">Create task <span>↗</span></button></form></dialog>

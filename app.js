@@ -38,12 +38,15 @@ const listForm = document.querySelector('#list-form');
 let editingListName = null;
 const themeToggle = document.querySelector('#theme-toggle');
 const themeToggleLabel = document.querySelector('#theme-toggle-label');
+const mobileThemeToggle = document.querySelector('#mobile-theme-toggle');
 
 function setTheme(isDark) {
   document.documentElement.classList.toggle('dark-mode', isDark);
   document.body.classList.toggle('dark-mode', isDark);
   themeToggle.setAttribute('aria-pressed', String(isDark));
   themeToggleLabel.textContent = isDark ? 'Light mode' : 'Dark mode';
+  mobileThemeToggle.setAttribute('aria-pressed', String(isDark));
+  mobileThemeToggle.querySelector('span').textContent = isDark ? '☼' : '◐';
   localStorage.setItem('task-dashboard-theme', isDark ? 'dark' : 'light');
 }
 
@@ -286,15 +289,16 @@ function openEditor(id = null) {
 }
 
 document.querySelectorAll('.tab').forEach((tab) => tab.addEventListener('click', () => { activeFilter = tab.dataset.filter; activeList = null; setCalendarVisibility(false); setActiveTab(activeFilter); render(); }));
-document.querySelectorAll('[data-view]').forEach((item) => item.addEventListener('click', () => { document.querySelectorAll('.nav-item.active').forEach((active) => active.classList.remove('active')); item.classList.add('active'); const isCalendar = item.dataset.view === 'calendar'; activeFilter = item.dataset.view === 'inbox' ? 'today' : item.dataset.view === 'upcoming' ? 'upcoming' : 'all'; activeList = item.dataset.view === 'completed' ? completedList : null; setCalendarVisibility(isCalendar); setActiveTab(activeFilter); render(); }));
+document.querySelectorAll('[data-view]').forEach((item) => item.addEventListener('click', () => { document.querySelectorAll('[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === item.dataset.view)); const isCalendar = item.dataset.view === 'calendar'; activeFilter = item.dataset.view === 'inbox' ? 'today' : item.dataset.view === 'upcoming' ? 'upcoming' : 'all'; activeList = item.dataset.view === 'completed' ? completedList : null; setCalendarVisibility(isCalendar); setActiveTab(activeFilter); render(); }));
 document.querySelector('#calendar-prev').addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() - 1); renderCalendar(); });
 document.querySelector('#calendar-next').addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() + 1); renderCalendar(); });
 document.querySelector('#calendar-list-filter').addEventListener('change', (event) => { calendarListFilter = event.target.value; renderCalendar(); });
-document.querySelectorAll('#open-add, #open-add-bottom').forEach((button) => button.addEventListener('click', () => openEditor()));
+document.querySelectorAll('#open-add, #open-add-bottom, #mobile-open-add').forEach((button) => button.addEventListener('click', () => openEditor()));
 document.querySelector('#task-search').addEventListener('input', render);
 document.querySelector('#task-sort').addEventListener('change', render);
 document.querySelector('#add-list').addEventListener('click', () => openListEditor());
 themeToggle.addEventListener('click', () => setTheme(!document.body.classList.contains('dark-mode')));
+mobileThemeToggle.addEventListener('click', () => setTheme(!document.body.classList.contains('dark-mode')));
 
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
