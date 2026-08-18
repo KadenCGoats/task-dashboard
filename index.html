@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A focused dashboard for planning and tracking tasks.">
+  <title>Task dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .search-box{display:flex;align-items:center;gap:7px;width:190px;height:34px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:#fff;color:#9ba5a1}.search-box input{width:100%;border:0;outline:0;background:transparent;color:var(--ink);font-size:11px}.search-box input::placeholder{color:#a5afab}.import-button{position:relative;overflow:hidden}.import-button input{position:absolute;inset:0;opacity:0;cursor:pointer}.sort-control{display:flex;align-items:center;gap:7px;color:#9ba5a1;font-size:10px}.sort-control select{border:0;background:transparent;color:var(--ink);font-size:11px;outline:0}.task-action{display:none;width:25px;height:25px;background:#f5f7f4;color:#9da7a4;border-radius:5px;font-size:13px;padding:0}.task-row:hover .task-action{display:grid;place-items:center}.task-action:hover{color:var(--coral);background:#f9e9e5}.task-info{position:relative;display:block;flex:1;min-width:0;padding:0;background:transparent;text-align:left}.task-description{display:none;position:absolute;z-index:3;top:calc(100% + 7px);left:0;width:min(320px, calc(100vw - 40px));padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel);box-shadow:var(--shadow);color:var(--muted);font-size:11px;line-height:1.45;white-space:normal}.task-info:hover .task-description,.task-info:focus-visible .task-description,.task-info[aria-expanded="true"] .task-description{display:block}.task-row:has(.task-info:hover),.task-row:has(.task-info:focus-visible){position:relative;z-index:2}.task-row.overdue .task-date{color:var(--coral-dark);font-weight:700}.empty-state{padding:35px 0;color:#a1aaa7;text-align:center;font-size:12px}.task-dialog textarea{resize:vertical;min-height:62px;width:100%;display:block;margin-top:7px;border:1px solid var(--line);border-radius:6px;padding:11px 12px;color:var(--ink);background:#fbfcfa;outline-color:var(--coral);font-size:12px;font-family:inherit}.field-hint{font-size:10px;font-weight:400;color:#a1aaa7}.task-dialog input[type=number]{appearance:textfield}@media(max-width:650px){.search-box{width:35px;border:0;background:transparent;padding:0}.search-box span{font-size:21px}.search-box input{position:absolute;right:115px;width:150px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:9px;display:none}.search-box:focus-within input{display:block}.sort-control{font-size:0}.sort-control select{font-size:11px}.task-action{display:grid;place-items:center}.top-actions{gap:4px}}
+  </style>
+  <style>
+    .list-row{display:flex;align-items:center;position:relative}.list-row .nav-item{flex:1}.list-edit{display:none;position:absolute;right:8px;width:24px;height:24px;border-radius:5px;background:#e3ebe4;color:#89958f;font-size:12px;padding:0}.list-row:hover .list-edit{display:grid;place-items:center}.list-edit:hover{color:var(--coral)}
+    .list-color-picker{position:relative;z-index:1;display:grid;place-items:center;width:8px;height:8px;flex:0 0 8px;margin-left:14px;border-radius:50%;cursor:pointer}.list-color-picker input{position:absolute;inset:-6px;width:20px;height:20px;opacity:0;cursor:pointer}.list-color-picker:focus-within{outline:2px solid var(--coral);outline-offset:2px}.list-color-picker + .nav-item{padding-left:9px}
+  </style>
+</head>
+<body>
+  <section class="auth-screen" id="auth-screen" hidden>
+    <form class="auth-card" id="auth-form">
+      <p class="eyebrow">Private workspace</p>
+      <h1>Welcome back.</h1>
+      <p class="subtle" id="auth-message">Sign in to keep your tasks available on every device.</p>
+      <label>Email<input id="auth-email" type="email" autocomplete="email" required></label>
+      <label>Password<input id="auth-password" type="password" autocomplete="current-password" minlength="6" required></label>
+      <button class="primary-button" id="auth-submit" type="submit">Sign in <span>↗</span></button>
+      <button class="auth-switch" id="auth-switch" type="button">Need an account? Sign up</button>
+      <p class="auth-error" id="auth-error" role="alert"></p>
+    </form>
+  </section>
+  <div class="app-shell" hidden>
+    <aside class="sidebar">
+      <div class="brand">Tasks</div>
+      <nav class="main-nav" aria-label="Main navigation">
+        <button class="nav-item active" data-view="overview"><span class="nav-icon">◈</span>Overview</button>
+        <button class="nav-item" data-view="inbox"><span class="nav-icon">□</span>Inbox <b id="inbox-count">3</b></button>
+        <button class="nav-item" data-view="completed"><span class="nav-icon">✓</span>Completed <b id="completed-nav-count">0</b></button>
+        <button class="nav-item" data-view="upcoming"><span class="nav-icon">◷</span>Upcoming</button>
+        <button class="nav-item" data-view="calendar"><span class="nav-icon">▦</span>Calendar</button>
+      </nav>
+      <div class="nav-section-label">Your lists <button class="plus-button" id="add-list" aria-label="Add a list">+</button></div>
+      <nav class="list-nav" id="list-nav" aria-label="Task lists">
+      </nav>
+      <div class="sidebar-bottom">
+          <button class="nav-item theme-toggle" id="theme-toggle" type="button" aria-pressed="false"><span class="nav-icon" aria-hidden="true">◐</span><span id="theme-toggle-label">Dark mode</span></button>
+        <div class="sidebar-note"><span class="sun-icon">☼</span><div><strong>Keep your pace</strong><small>Small steps add up.</small></div></div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="breadcrumb"><span>Tuesday, August 18, 2026</span><span class="breadcrumb-dot">/</span><strong>Overview</strong></div>
+        <div class="top-actions"><label class="search-box"><span aria-hidden="true">⌕</span><input id="task-search" type="search" placeholder="Search tasks" aria-label="Search tasks"></label><button class="icon-button" id="export-tasks" aria-label="Export tasks">⇩</button><label class="icon-button import-button" aria-label="Import tasks">⇧<input id="import-tasks" type="file" accept="application/json"></label><button class="avatar" id="sign-out" type="button" aria-label="Sign out">KG</button></div>
+      </header>
+
+      <div class="content-wrap">
+        <section class="welcome-row">
+          <div><p class="eyebrow">Your day, in focus</p><h1>Good morning, Kaden.</h1><p class="subtle">Here is what is moving today. Keep the important things close.</p></div>
+          <button class="primary-button" id="open-add"><span>+</span> Add task</button>
+        </section>
+
+        <section class="stats-grid" aria-label="Task summary">
+          <article class="stat-card highlight"><div class="stat-top"><span>Open tasks</span><span class="stat-icon">◌</span></div><strong id="open-total">11</strong><div class="stat-foot">Currently open</div></article>
+          <article class="stat-card"><div class="stat-top"><span>Completed</span><span class="stat-icon green">✓</span></div><strong id="completed-total">8</strong><div class="stat-foot">This week <span class="mini-bar"><i></i></span></div></article>
+          <article class="stat-card"><div class="stat-top"><span>Due today</span><span class="stat-icon amber">◷</span></div><strong id="today-total">4</strong><div class="stat-foot"><span class="trend warning">2 high priority</span></div></article>
+          <article class="stat-card"><div class="stat-top"><span>Time to do tasks today</span><span class="stat-icon purple">✦</span></div><strong id="focus-time-total">1h 20m</strong><div class="stat-foot"><span id="focus-time-caption">3 tasks left today</span><span class="progress-line"><i id="focus-time-progress"></i></span></div></article>
+        </section>
+
+        <div class="dashboard-grid">
+          <section class="calendar-panel panel" id="calendar-panel" hidden>
+            <div class="panel-header"><div><h2>Calendar</h2><span class="panel-caption" id="calendar-caption">Tasks by due date</span></div><div class="calendar-actions"><button class="calendar-nav" id="calendar-prev" aria-label="Previous month">←</button><strong id="calendar-month"></strong><button class="calendar-nav" id="calendar-next" aria-label="Next month">→</button><label class="sort-control"><select id="calendar-list-filter" aria-label="Filter calendar by list"></select></label></div></div>
+            <div class="calendar-weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+            <div class="calendar-grid" id="calendar-grid"></div>
+          </section>
+          <section class="tasks-panel panel">
+            <div class="panel-header"><div><h2>My tasks</h2><span class="panel-caption" id="task-caption">11 open tasks across all lists</span></div><label class="sort-control">Sort by<select id="task-sort" aria-label="Sort tasks"><option value="default">My order</option><option value="due">Due date</option><option value="priority">Priority</option><option value="list">List</option></select></label></div>
+            <div class="task-tabs" role="tablist"><button class="tab active" data-filter="all">All <span>11</span></button><button class="tab" data-filter="today">Today <span>4</span></button><button class="tab" data-filter="upcoming">Upcoming <span>7</span></button></div>
+            <div class="task-list" id="task-list"></div>
+            <button class="add-task-row" id="open-add-bottom"><span>+</span> Add a task</button>
+          </section>
+
+          <aside class="right-column">
+            <section class="progress-panel panel"><div class="panel-header"><div><h2>Weekly progress</h2><span class="panel-caption">Completed tasks only</span></div><button class="more-button" aria-label="More progress options">•••</button></div><div class="chart-wrap"><div class="chart-y"><span>8</span><span>4</span><span>0</span></div><div class="chart"><div class="grid-line line-one"></div><div class="grid-line line-two"></div><div class="grid-line line-three"></div><div class="bars"><i data-day="2026-08-17"><b>Mon</b></i><i data-day="2026-08-18" class="current"><b>Tue</b></i><i data-day="2026-08-19"><b>Wed</b></i><i data-day="2026-08-20"><b>Thu</b></i><i data-day="2026-08-21"><b>Fri</b></i><i data-day="2026-08-22"><b>Sat</b></i><i data-day="2026-08-23"><b>Sun</b></i></div></div></div><div class="chart-summary"><strong id="weekly-completed-total">0</strong><span>tasks completed</span><em id="weekly-completed-change">Start tracking</em></div></section>
+            <section class="focus-panel panel"><div class="panel-header"><div><h2>Focus list</h2><span class="panel-caption">High priority due today</span></div><span class="focus-spark">✦</span></div><div id="focus-list"></div></section>
+          </aside>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <dialog class="task-dialog" id="task-dialog"><form method="dialog" id="task-form"><div class="dialog-header"><div><p class="eyebrow">Task details</p><h2 id="dialog-title">What needs doing?</h2></div><button class="icon-button" value="cancel" aria-label="Close dialog">×</button></div><label>Task name<input id="task-name" name="task" type="text" placeholder="e.g. Send project update" required></label><div class="form-row"><label>List<select id="task-list-select"></select></label><label>Due date<input id="task-due" type="date" required></label></div><label>Priority<select id="task-priority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></label><label>Notes<textarea id="task-notes" rows="3" placeholder="Add useful context"></textarea></label><label>Estimate <span class="field-hint">minutes</span><input id="task-estimate" type="number" min="5" step="5" placeholder="30"></label><button class="primary-button dialog-submit" id="dialog-submit" value="default">Create task <span>↗</span></button></form></dialog>
+  <dialog class="task-dialog list-dialog" id="list-dialog"><form method="dialog" id="list-form"><div class="dialog-header"><div><p class="eyebrow">Your lists</p><h2 id="list-dialog-title">Add a list</h2></div><button class="icon-button" value="cancel" aria-label="Close list dialog">×</button></div><label>List name<input id="list-name" type="text" placeholder="e.g. Errands" required></label><button class="primary-button dialog-submit" id="list-submit" value="default">Add list <span>↗</span></button></form></dialog>
+  <style>
+    .calendar-panel{grid-column:1}.calendar-actions{display:flex;align-items:center;gap:8px}.calendar-actions strong{min-width:118px;text-align:center;font-size:13px}.calendar-actions .sort-control{margin-left:10px}.calendar-nav{width:26px;height:26px;border-radius:5px;background:var(--paper);color:var(--muted);font-size:16px}.calendar-nav:hover{color:var(--ink);background:var(--mint)}.calendar-weekdays,.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}.calendar-weekdays{margin-top:20px;color:var(--muted);font-size:10px;text-align:right}.calendar-weekdays span{padding:0 9px 8px}.calendar-day{min-height:112px;padding:8px;border-top:1px solid var(--line);border-right:1px solid var(--line);overflow:hidden}.calendar-day:nth-child(7n+1){border-left:1px solid var(--line)}.calendar-day:nth-last-child(-n+7){border-bottom:1px solid var(--line)}.calendar-day.other-month{color:#b8c0bc;background:rgba(238,242,238,.35)}.calendar-day.today{background:var(--mint)}.calendar-number{display:block;margin-bottom:7px;text-align:right;font-size:11px;font-weight:700}.calendar-task{display:block;width:100%;margin:3px 0;padding:4px 5px;border:0;border-left:3px solid var(--task-color);border-radius:3px;background:var(--paper);color:var(--ink);font-size:10px;line-height:1.25;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.calendar-task.done{text-decoration:line-through;opacity:.58}.calendar-empty{grid-column:1/-1;padding:50px 0;color:var(--muted);text-align:center;font-size:12px}
+    select{font-family:'DM Sans',sans-serif;font-weight:500;color:var(--ink);background:var(--panel)}select option{font-family:'DM Sans',sans-serif;background:var(--panel);color:var(--ink)}.dark-mode select{color-scheme:dark}.dark-mode select,.dark-mode select option{background:var(--panel);color:var(--ink)}
+    @media (max-width:760px){.calendar-actions{flex-wrap:wrap;justify-content:flex-end}.calendar-actions .sort-control{width:100%;justify-content:flex-end;margin-left:0}.calendar-day{min-height:90px;padding:5px}.calendar-weekdays span{padding:0 4px 7px;font-size:9px}.calendar-task{font-size:9px;padding:3px}.calendar-task span{display:none}}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
