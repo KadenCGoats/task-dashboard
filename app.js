@@ -126,12 +126,14 @@ function currentVisibleTasks() {
 }
 
 function renderLists() {
-  const visibleLists = activeWorkspace === 'personal' ? lists.filter((list) => list === 'Wishlist' || list === 'Groceries') : [];
+  const personalLists = lists.filter((list) => list === 'Wishlist' || list === 'Groceries');
+  const visibleLists = activeWorkspace === 'personal' ? [] : lists.filter((list) => !personalLists.includes(list));
   const listRows = visibleLists.map((list, index) => `<div class="list-row"><label class="list-color-picker" style="background:${getListColor(list, index)}" title="Change ${escapeHtml(list)} color"><input type="color" value="${getListColor(list, index)}" data-color-list="${escapeHtml(list)}" aria-label="Change ${escapeHtml(list)} color"></label><button class="nav-item ${activeList === list ? 'active' : ''}" data-list="${escapeHtml(list)}">${escapeHtml(list)} <b>${tasks.filter((task) => task.list === list && !task.done).length}</b></button><button class="list-edit" data-edit-list="${escapeHtml(list)}" aria-label="Rename ${escapeHtml(list)}">✎</button><button class="list-delete" data-delete-list="${escapeHtml(list)}" aria-label="Delete ${escapeHtml(list)}">×</button></div>`).join('');
   document.querySelector('#list-nav').innerHTML = listRows;
-  const listSwitcher = document.querySelector('#personal-list-switcher');
-  listSwitcher.hidden = activeWorkspace !== 'personal';
-  listSwitcher.innerHTML = activeWorkspace === 'personal' ? [`<button class="personal-list-tab ${!activeList ? 'active' : ''}" data-personal-list="">All personal</button>`, ...visibleLists.map((list) => `<button class="personal-list-tab ${activeList === list ? 'active' : ''}" data-personal-list="${escapeHtml(list)}">${escapeHtml(list)} <span>${tasks.filter((task) => task.list === list && !task.done).length}</span></button>`)].join('') : '';
+  const personalPanel = document.querySelector('#personal-lists-panel');
+  const personalContent = document.querySelector('#personal-lists');
+  personalPanel.hidden = activeWorkspace !== 'personal';
+  personalContent.innerHTML = activeWorkspace === 'personal' ? `<button class="personal-list-card ${!activeList ? 'active' : ''}" data-personal-list=""><span class="personal-list-card-icon">◎</span><span><strong>All personal</strong><small>Everything in Personal</small></span><b>${tasks.filter((task) => taskInWorkspace(task) && !task.done).length}</b></button>${personalLists.map((list) => `<button class="personal-list-card ${activeList === list ? 'active' : ''}" data-personal-list="${escapeHtml(list)}"><span class="personal-list-card-icon" style="--list-color:${getListColor(list)}"></span><span><strong>${escapeHtml(list)}</strong><small>${tasks.filter((task) => task.list === list && !task.done).length} open items</small></span><b>${tasks.filter((task) => task.list === list && !task.done).length}</b></button>`).join('')}` : '';
   document.querySelectorAll('[data-list]').forEach((item) => item.addEventListener('click', () => { activeList = item.dataset.list; activeWorkspace = item.dataset.list === 'Work' ? 'work' : 'personal'; activeFilter = 'all'; setCalendarVisibility(false); setActiveTab('all'); render(); }));
   document.querySelectorAll('[data-color-list]').forEach((input) => input.addEventListener('input', () => setListColor(input.dataset.colorList, input.value)));
   document.querySelectorAll('[data-edit-list]').forEach((item) => item.addEventListener('click', (event) => { event.stopPropagation(); openListEditor(item.dataset.editList); }));

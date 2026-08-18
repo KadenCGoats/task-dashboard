@@ -73,13 +73,13 @@
           <section class="tasks-panel panel">
             <div class="panel-header"><div><h2 id="tasks-heading">My tasks</h2><span class="panel-caption" id="task-caption">11 open tasks across all lists</span></div><div class="panel-tools"><button class="calendar-toggle" id="calendar-toggle" type="button">Calendar</button><label class="sort-control">Sort by<select id="task-sort" aria-label="Sort tasks"><option value="default">My order</option><option value="due">Due date</option><option value="priority">Priority</option><option value="list">List</option></select></label></div></div>
             <div class="task-tabs" role="tablist"><button class="tab active" data-filter="all">All <span>11</span></button><button class="tab" data-filter="today">Today <span>4</span></button><button class="tab" data-filter="upcoming">Upcoming <span>7</span></button></div>
-            <div class="personal-list-switcher" id="personal-list-switcher" aria-label="Personal lists"></div>
             <div class="task-list" id="task-list"></div>
             <button class="add-task-row" id="open-add-bottom"><span>+</span> Add a task</button>
           </section>
 
           <aside class="right-column">
             <section class="notes-panel panel"><div class="panel-header"><div><h2>Notes</h2><span class="panel-caption">Workspace thoughts</span></div></div><div id="workspace-notes"></div></section>
+            <section class="personal-lists-panel panel" id="personal-lists-panel"><div class="panel-header"><div><h2>Personal lists</h2><span class="panel-caption">Keep everyday items together</span></div></div><div id="personal-lists"></div></section>
             <section class="workday-panel panel"><div class="panel-header"><div><h2>Today’s progress</h2><span class="panel-caption">8:00 AM – 4:00 PM Central</span></div></div><div class="workday-progress"><div class="workday-progress-top"><strong id="completion-percent">0%</strong><span id="workday-time-left">8h left</span></div><div class="progress-track"><i id="completion-progress"></i></div><p id="workday-caption">0% of the workday elapsed</p></div></section>
             <section class="focus-panel panel"><div class="panel-header"><div><h2>Focus list</h2><span class="panel-caption">High priority due today</span></div><span class="focus-spark">✦</span></div><div id="focus-list"></div></section>
           </aside>

@@ -68,12 +68,12 @@
 .workday-panel .workday-progress-top{padding:0 2px}
 .workday-panel .progress-track{height:10px;margin:16px 0 10px}
 .workday-panel .workday-progress p{text-align:center}
-.personal-list-switcher{display:flex;gap:8px;padding:12px 16px 4px;overflow-x:auto;background:var(--paper);border-bottom:1px solid var(--line)}.personal-list-tab{flex:0 0 auto;padding:8px 12px;border:1px solid var(--line);border-radius:18px;background:var(--panel);color:var(--muted);font-size:10px}.personal-list-tab span{margin-left:3px;color:var(--ink);font-weight:700}.personal-list-tab:hover,.personal-list-tab.active{border-color:var(--coral);background:var(--mint);color:var(--ink)}.personal-workspace .tasks-panel{border-color:#d5e7df}.personal-workspace .tasks-panel .panel-header{background:linear-gradient(90deg,rgba(220,239,231,.52),transparent)}
+.personal-lists-panel{display:none}.personal-lists-panel:not([hidden]){display:block}.personal-lists-panel #personal-lists{display:grid;gap:8px;padding:0 14px 16px}.personal-list-card{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:10px;width:100%;min-height:54px;padding:9px 10px;border:1px solid var(--line);border-radius:7px;background:var(--paper);text-align:left}.personal-list-card:hover,.personal-list-card.active{border-color:var(--coral);background:var(--mint)}.personal-list-card>span:nth-child(2){display:grid;gap:3px;min-width:0}.personal-list-card strong{font-size:11px}.personal-list-card small{color:var(--muted);font-size:9px}.personal-list-card>b{font-size:11px;color:var(--muted)}.personal-list-card-icon{width:10px;height:10px;margin:auto;border-radius:50%;background:var(--list-color,var(--coral));box-shadow:0 0 0 4px color-mix(in srgb,var(--list-color,var(--coral)) 16%,transparent)}.personal-workspace .tasks-panel{border-color:#d5e7df}.personal-workspace .tasks-panel .panel-header{background:linear-gradient(90deg,rgba(220,239,231,.52),transparent)}
 @media (max-width:760px){
 	.notes-panel .panel-header,.workday-panel .panel-header{padding:20px 16px 14px}
 	#workspace-notes{width:calc(100% - 32px)}
 	.workday-panel .workday-progress{width:calc(100% - 32px);padding-bottom:20px}
-	.personal-list-switcher{padding:10px 14px 2px}
+	.personal-lists-panel #personal-lists{padding:0 12px 14px}
 }
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap');
 :root{--ink:#1e2529;--muted:#859093;--line:#e7e9e6;--paper:#fbfcfa;--panel:#fff;--coral:#ef735f;--coral-dark:#d95f4e;--mint:#dcefe7;--green:#5eaa82;--amber:#e6ad4d;--lavender:#e9e5f8;--shadow:0 16px 40px rgba(41,54,53,.06)}
