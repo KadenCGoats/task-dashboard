@@ -87,6 +87,8 @@ async function loadData() {
     listColors = Object.fromEntries((listResult.data || []).map((row) => [row.name, row.color]).filter((entry) => entry[1]));
   }
   lists = lists.filter((list, index) => lists.indexOf(list) === index);
+  personalWorkspaceLists = personalWorkspaceLists.filter((list) => lists.includes(list));
+  ['Personal', 'Wishlist', 'Groceries'].forEach((list) => { if (lists.includes(list) && !personalWorkspaceLists.includes(list)) personalWorkspaceLists.push(list); });
   const personalLists = ['Wishlist', 'Groceries'];
   const missingPersonalLists = personalLists.filter((name) => !lists.includes(name));
   if (missingPersonalLists.length) {
@@ -107,7 +109,7 @@ function dueFilter(date) { return date === today ? 'today' : date > today ? 'upc
 function escapeHtml(value) { return String(value || '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character])); }
 function formatDuration(minutes) { if (minutes < 60) return `${minutes}m`; const hours = Math.floor(minutes / 60); const remainder = minutes % 60; return remainder ? `${hours}h ${remainder}m` : `${hours}h`; }
 function getListColor(list, index = lists.indexOf(list)) { const storedColor = listColors[list]; if (/^#[0-9a-f]{6}$/i.test(storedColor || '')) return storedColor; return list === completedList ? '#5eaa82' : defaultListColors[(index < 0 ? 0 : index) % defaultListColors.length]; }
-const personalWorkspaceLists = ['Personal', 'Wishlist', 'Groceries'];
+let personalWorkspaceLists = JSON.parse(localStorage.getItem('task-dashboard-personal-lists') || 'null') || ['Personal', 'Wishlist', 'Groceries'];
 function taskInWorkspace(task, workspace = activeWorkspace) { const logicalList = task.done ? (task.previousList || task.list) : task.list; return workspace === 'overview' || (workspace === 'work' ? logicalList === 'Work' : personalWorkspaceLists.includes(logicalList)); }
 
 function currentVisibleTasks() {
@@ -160,12 +162,14 @@ async function saveListName(newName) {
     lists = lists.map((list) => list === editingListName ? newName : list);
     tasks = tasks.map((task) => task.list === editingListName ? { ...task, list: newName } : task.previousList === editingListName ? { ...task, previousList: newName } : task);
     if (listColors[editingListName]) { listColors[newName] = listColors[editingListName]; delete listColors[editingListName]; }
+    if (personalWorkspaceLists.includes(editingListName)) { personalWorkspaceLists = personalWorkspaceLists.map((list) => list === editingListName ? newName : list); localStorage.setItem('task-dashboard-personal-lists', JSON.stringify(personalWorkspaceLists)); }
     if (activeList === editingListName) activeList = newName;
   } else {
     const { data, error } = await supabaseClient.from('lists').insert({ user_id: currentUser.id, name: newName, color: getListColor(newName, lists.length) }).select().single();
     if (error) throw error;
     lists.push(newName);
     listColors[newName] = data.color;
+    if (activeWorkspace === 'personal') { personalWorkspaceLists.push(newName); localStorage.setItem('task-dashboard-personal-lists', JSON.stringify(personalWorkspaceLists)); }
   }
   render();
 }
@@ -190,6 +194,8 @@ async function deleteList(listName) {
   if (error) { alert(error.message); return; }
   tasks = tasks.map((task) => updatedTasks.find((updated) => updated.id === task.id) || task);
   lists = lists.filter((list) => list !== listName);
+  personalWorkspaceLists = personalWorkspaceLists.filter((list) => list !== listName);
+  localStorage.setItem('task-dashboard-personal-lists', JSON.stringify(personalWorkspaceLists));
   delete listColors[listName];
   if (activeList === listName) activeList = null;
   render();
@@ -348,6 +354,7 @@ document.querySelectorAll('#open-add, #open-add-bottom, #mobile-open-add').forEa
 document.querySelector('#task-search').addEventListener('input', render);
 document.querySelector('#task-sort').addEventListener('change', render);
 document.querySelector('#add-list').addEventListener('click', () => openListEditor());
+document.querySelector('#add-personal-list').addEventListener('click', () => openListEditor());
 themeToggle.addEventListener('click', () => setTheme(!document.body.classList.contains('dark-mode')));
 mobileThemeToggle.addEventListener('click', () => setTheme(!document.body.classList.contains('dark-mode')));
 
