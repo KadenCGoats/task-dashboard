@@ -339,17 +339,17 @@ let isSignUp = false;
 document.querySelector('#close-auth').addEventListener('click', (event) => {
   event.preventDefault();
   event.stopPropagation();
-  authScreen.setAttribute('hidden', '');
+  authScreen.classList.add('auth-hidden');
 });
 
 authScreen.addEventListener('click', (event) => {
-  if (event.target === authScreen) authScreen.setAttribute('hidden', '');
+  if (event.target === authScreen) authScreen.classList.add('auth-hidden');
 });
 
 function showAuth(message = 'Sign in to keep your tasks available on every device.') {
   authMessage.textContent = message;
   authError.textContent = '';
-  authScreen.hidden = false;
+  authScreen.classList.remove('auth-hidden');
   document.querySelector('#account-button').textContent = 'Sign in';
 }
 
@@ -372,7 +372,7 @@ authForm.addEventListener('submit', async (event) => {
     const result = isSignUp ? await supabaseClient.auth.signUp({ email, password }) : await supabaseClient.auth.signInWithPassword({ email, password });
     if (result.error) { authError.textContent = result.error.message; return; }
     if (isSignUp && !result.data.session) { authMessage.textContent = 'Check your email to confirm your account, then sign in.'; return; }
-    authScreen.hidden = true;
+    authScreen.classList.add('auth-hidden');
     await startApp(result.data.session);
   } catch (error) {
     authError.textContent = error.message || 'The request could not be completed. Check your connection and try again.';
@@ -384,8 +384,8 @@ authForm.addEventListener('submit', async (event) => {
 
 document.querySelector('#account-button').addEventListener('click', async () => {
   if (currentUser) { await supabaseClient.auth.signOut(); currentUser = null; showAuth(); return; }
-  authScreen.hidden = !authScreen.hidden;
-  if (!authScreen.hidden) document.querySelector('#auth-email').focus();
+  authScreen.classList.toggle('auth-hidden');
+  if (!authScreen.classList.contains('auth-hidden')) document.querySelector('#auth-email').focus();
 });
 
 async function startApp(session = null) {
@@ -395,7 +395,7 @@ async function startApp(session = null) {
   try {
     await loadData();
     setTheme(localStorage.getItem('task-dashboard-theme') === 'dark');
-    authScreen.hidden = true;
+    authScreen.classList.add('auth-hidden');
     document.querySelector('#account-button').textContent = 'Sign out';
     render();
   } catch (error) {
