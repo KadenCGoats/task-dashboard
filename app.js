@@ -138,7 +138,15 @@ function renderLists() {
   const personalContent = document.querySelector('#personal-lists');
   personalPanel.hidden = activeWorkspace !== 'personal';
   personalContent.innerHTML = activeWorkspace === 'personal' ? `<button class="personal-list-card ${activeList === null ? 'active' : ''}" data-personal-list=""><span class="personal-list-card-icon">◎</span><span><strong>All personal</strong><small>Everything in Personal</small></span><b>${tasks.filter((task) => taskInWorkspace(task) && !task.done).length}</b></button>${personalLists.map((list) => `<div class="personal-list-card-wrap"><button class="personal-list-card ${activeList === list ? 'active' : ''}" data-personal-list="${escapeHtml(list)}"><span class="personal-list-card-icon" style="--list-color:${getListColor(list)}"></span><span><strong>${escapeHtml(list)}</strong><small>${tasks.filter((task) => task.list === list && !task.done).length} open items</small></span><b>${tasks.filter((task) => task.list === list && !task.done).length}</b></button><label class="personal-card-color" style="background:${getListColor(list)}" title="Change ${escapeHtml(list)} color"><input type="color" value="${getListColor(list)}" data-color-list="${escapeHtml(list)}" aria-label="Change ${escapeHtml(list)} color"></label></div>`).join('')}` : '';
-  document.querySelectorAll('[data-list]').forEach((item) => item.addEventListener('click', () => { activeList = item.dataset.list; activeWorkspace = item.dataset.list === 'Work' ? 'work' : 'personal'; activeFilter = 'all'; setCalendarVisibility(false); setActiveTab('all'); render(); }));
+  document.querySelectorAll('[data-list]').forEach((item) => item.addEventListener('click', () => {
+    activeList = item.dataset.list;
+    const selectedList = item.dataset.list.toLowerCase();
+    activeWorkspace = selectedList === 'work' ? 'work' : personalWorkspaceLists.some((list) => list.toLowerCase() === selectedList) ? 'personal' : 'overview';
+    activeFilter = 'all';
+    setCalendarVisibility(false);
+    setActiveTab('all');
+    render();
+  }));
   document.querySelectorAll('[data-color-list]').forEach((input) => input.addEventListener('input', () => setListColor(input.dataset.colorList, input.value)));
   document.querySelectorAll('[data-edit-list]').forEach((item) => item.addEventListener('click', (event) => { event.stopPropagation(); openListEditor(item.dataset.editList); }));
   document.querySelectorAll('[data-delete-list]').forEach((item) => item.addEventListener('click', (event) => { event.stopPropagation(); deleteList(item.dataset.deleteList); }));
