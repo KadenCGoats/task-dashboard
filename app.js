@@ -126,12 +126,17 @@ function currentVisibleTasks() {
 }
 
 function renderLists() {
-  const listRows = lists.map((list, index) => `<div class="list-row"><label class="list-color-picker" style="background:${getListColor(list, index)}" title="Change ${escapeHtml(list)} color"><input type="color" value="${getListColor(list, index)}" data-color-list="${escapeHtml(list)}" aria-label="Change ${escapeHtml(list)} color"></label><button class="nav-item ${activeList === list ? 'active' : ''}" data-list="${escapeHtml(list)}">${escapeHtml(list)} <b>${tasks.filter((task) => task.list === list && !task.done).length}</b></button><button class="list-edit" data-edit-list="${escapeHtml(list)}" aria-label="Rename ${escapeHtml(list)}">✎</button><button class="list-delete" data-delete-list="${escapeHtml(list)}" aria-label="Delete ${escapeHtml(list)}">×</button></div>`).join('');
+  const visibleLists = activeWorkspace === 'personal' ? lists.filter((list) => list === 'Wishlist' || list === 'Groceries') : [];
+  const listRows = visibleLists.map((list, index) => `<div class="list-row"><label class="list-color-picker" style="background:${getListColor(list, index)}" title="Change ${escapeHtml(list)} color"><input type="color" value="${getListColor(list, index)}" data-color-list="${escapeHtml(list)}" aria-label="Change ${escapeHtml(list)} color"></label><button class="nav-item ${activeList === list ? 'active' : ''}" data-list="${escapeHtml(list)}">${escapeHtml(list)} <b>${tasks.filter((task) => task.list === list && !task.done).length}</b></button><button class="list-edit" data-edit-list="${escapeHtml(list)}" aria-label="Rename ${escapeHtml(list)}">✎</button><button class="list-delete" data-delete-list="${escapeHtml(list)}" aria-label="Delete ${escapeHtml(list)}">×</button></div>`).join('');
   document.querySelector('#list-nav').innerHTML = listRows;
+  const listSwitcher = document.querySelector('#personal-list-switcher');
+  listSwitcher.hidden = activeWorkspace !== 'personal';
+  listSwitcher.innerHTML = activeWorkspace === 'personal' ? [`<button class="personal-list-tab ${!activeList ? 'active' : ''}" data-personal-list="">All personal</button>`, ...visibleLists.map((list) => `<button class="personal-list-tab ${activeList === list ? 'active' : ''}" data-personal-list="${escapeHtml(list)}">${escapeHtml(list)} <span>${tasks.filter((task) => task.list === list && !task.done).length}</span></button>`)].join('') : '';
   document.querySelectorAll('[data-list]').forEach((item) => item.addEventListener('click', () => { activeList = item.dataset.list; activeWorkspace = item.dataset.list === 'Work' ? 'work' : 'personal'; activeFilter = 'all'; setCalendarVisibility(false); setActiveTab('all'); render(); }));
   document.querySelectorAll('[data-color-list]').forEach((input) => input.addEventListener('input', () => setListColor(input.dataset.colorList, input.value)));
   document.querySelectorAll('[data-edit-list]').forEach((item) => item.addEventListener('click', (event) => { event.stopPropagation(); openListEditor(item.dataset.editList); }));
   document.querySelectorAll('[data-delete-list]').forEach((item) => item.addEventListener('click', (event) => { event.stopPropagation(); deleteList(item.dataset.deleteList); }));
+  document.querySelectorAll('[data-personal-list]').forEach((item) => item.addEventListener('click', () => { activeList = item.dataset.personalList || null; activeFilter = 'all'; setActiveTab('all'); render(); }));
   document.querySelector('#task-list-select').innerHTML = lists.map((list) => `<option>${escapeHtml(list)}</option>`).join('');
 }
 
@@ -226,6 +231,7 @@ function renderCalendar() {
 
 function render() {
   renderLists();
+  document.body.classList.toggle('personal-workspace', activeWorkspace === 'personal');
   document.querySelector('.workday-panel').hidden = activeWorkspace === 'personal';
   const workspaceTasks = tasks.filter((task) => taskInWorkspace(task));
   const openTasks = workspaceTasks.filter((task) => !task.done);
@@ -272,19 +278,19 @@ function renderNotes() {
 }
 
 function renderWorkdayProgress(workspaceTasks) {
-  const total = workspaceTasks.length;
-  const completed = workspaceTasks.filter((task) => task.done).length;
-  const percent = total ? Math.round((completed / total) * 100) : 0;
   const now = new Date();
   const centralTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
   const start = new Date(centralTime); start.setHours(8, 0, 0, 0);
   const end = new Date(centralTime); end.setHours(16, 0, 0, 0);
+  const workdayMinutes = 8 * 60;
+  const elapsedMinutes = Math.min(workdayMinutes, Math.max(0, Math.round((centralTime - start) / 60000)));
+  const percent = Math.round((elapsedMinutes / workdayMinutes) * 100);
   const remainingMinutes = Math.max(0, Math.round((end - centralTime) / 60000));
   const minutesLabel = remainingMinutes >= 60 ? `${Math.floor(remainingMinutes / 60)}h ${remainingMinutes % 60}m left` : `${remainingMinutes}m left`;
   document.querySelector('#completion-percent').textContent = `${percent}%`;
   document.querySelector('#completion-progress').style.width = `${percent}%`;
   document.querySelector('#workday-time-left').textContent = centralTime < start ? 'Starts at 8:00 AM' : centralTime >= end ? 'Workday complete' : minutesLabel;
-  document.querySelector('#workday-caption').textContent = `${completed} of ${total} task${total === 1 ? '' : 's'} completed`;
+  document.querySelector('#workday-caption').textContent = `${percent}% of the workday elapsed`;
 }
 
 async function toggleTask(id) {
