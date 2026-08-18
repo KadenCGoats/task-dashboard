@@ -336,13 +336,20 @@ authForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   authError.textContent = '';
   authSubmit.disabled = true;
-  const email = document.querySelector('#auth-email').value.trim();
-  const password = document.querySelector('#auth-password').value;
-  const result = isSignUp ? await supabaseClient.auth.signUp({ email, password }) : await supabaseClient.auth.signInWithPassword({ email, password });
-  authSubmit.disabled = false;
-  if (result.error) { authError.textContent = result.error.message; return; }
-  if (isSignUp && !result.data.session) { authMessage.textContent = 'Check your email to confirm your account, then sign in.'; return; }
-  await startApp(result.data.session);
+  authSubmit.textContent = isSignUp ? 'Creating account...' : 'Signing in...';
+  try {
+    const email = document.querySelector('#auth-email').value.trim();
+    const password = document.querySelector('#auth-password').value;
+    const result = isSignUp ? await supabaseClient.auth.signUp({ email, password }) : await supabaseClient.auth.signInWithPassword({ email, password });
+    if (result.error) { authError.textContent = result.error.message; return; }
+    if (isSignUp && !result.data.session) { authMessage.textContent = 'Check your email to confirm your account, then sign in.'; return; }
+    await startApp(result.data.session);
+  } catch (error) {
+    authError.textContent = error.message || 'The request could not be completed. Check your connection and try again.';
+  } finally {
+    authSubmit.disabled = false;
+    authSubmit.innerHTML = isSignUp ? 'Create account <span>↗</span>' : 'Sign in <span>↗</span>';
+  }
 });
 
 document.querySelector('#sign-out').addEventListener('click', async () => { await supabaseClient.auth.signOut(); currentUser = null; showAuth(); });
