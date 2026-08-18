@@ -110,13 +110,14 @@ function currentVisibleTasks() {
 }
 
 function renderLists() {
-  const listRows = lists.map((list, index) => `<div class="list-row"><label class="list-color-picker" style="background:${getListColor(list, index)}" title="Change ${escapeHtml(list)} color"><input type="color" value="${getListColor(list, index)}" data-color-list="${escapeHtml(list)}" aria-label="Change ${escapeHtml(list)} color"></label><button class="nav-item ${activeList === list ? 'active' : ''}" data-list="${escapeHtml(list)}">${escapeHtml(list)} <b>${tasks.filter((task) => task.list === list && !task.done).length}</b></button><button class="list-edit" data-edit-list="${escapeHtml(list)}" aria-label="Rename ${escapeHtml(list)}">✎</button></div>`).join('');
+  const listRows = lists.map((list, index) => `<div class="list-row"><label class="list-color-picker" style="background:${getListColor(list, index)}" title="Change ${escapeHtml(list)} color"><input type="color" value="${getListColor(list, index)}" data-color-list="${escapeHtml(list)}" aria-label="Change ${escapeHtml(list)} color"></label><button class="nav-item ${activeList === list ? 'active' : ''}" data-list="${escapeHtml(list)}">${escapeHtml(list)} <b>${tasks.filter((task) => task.list === list && !task.done).length}</b></button><button class="list-edit" data-edit-list="${escapeHtml(list)}" aria-label="Rename ${escapeHtml(list)}">✎</button><button class="list-delete" data-delete-list="${escapeHtml(list)}" aria-label="Delete ${escapeHtml(list)}">×</button></div>`).join('');
   const completedCount = tasks.filter((task) => task.done).length;
   document.querySelector('#list-nav').innerHTML = listRows;
   document.querySelector('#completed-nav-count').textContent = completedCount;
   document.querySelectorAll('[data-list]').forEach((item) => item.addEventListener('click', () => { activeList = item.dataset.list; activeFilter = 'all'; setCalendarVisibility(false); setActiveTab('all'); render(); }));
   document.querySelectorAll('[data-color-list]').forEach((input) => input.addEventListener('input', () => setListColor(input.dataset.colorList, input.value)));
   document.querySelectorAll('[data-edit-list]').forEach((item) => item.addEventListener('click', (event) => { event.stopPropagation(); openListEditor(item.dataset.editList); }));
+  document.querySelectorAll('[data-delete-list]').forEach((item) => item.addEventListener('click', (event) => { event.stopPropagation(); deleteList(item.dataset.deleteList); }));
   document.querySelector('#task-list-select').innerHTML = lists.map((list) => `<option>${escapeHtml(list)}</option>`).join('');
 }
 
@@ -151,6 +152,24 @@ async function setListColor(list, color) {
   const { error } = await supabaseClient.from('lists').update({ color }).eq('user_id', currentUser.id).eq('name', list);
   if (error) { alert(error.message); return; }
   listColors[list] = color;
+  render();
+}
+
+async function deleteList(listName) {
+  if (!confirm(`Delete the ${listName} list? Tasks in it will move to another list.`)) return;
+  const replacement = lists.find((list) => list !== listName);
+  if (!replacement) { alert('Add another list before deleting this one.'); return; }
+  const affectedTasks = tasks.filter((task) => task.list === listName || task.previousList === listName);
+  const updatedTasks = affectedTasks.map((task) => ({ ...task, list: task.list === listName ? replacement : task.list, previousList: task.previousList === listName ? replacement : task.previousList }));
+  const taskUpdates = updatedTasks.map((task) => supabaseClient.from('tasks').update(taskToRow(task)).eq('id', task.id).eq('user_id', currentUser.id));
+  const { error: taskError } = await Promise.all(taskUpdates).then((results) => ({ error: results.find((result) => result.error)?.error }));
+  if (taskError) { alert(taskError.message); return; }
+  const { error } = await supabaseClient.from('lists').delete().eq('user_id', currentUser.id).eq('name', listName);
+  if (error) { alert(error.message); return; }
+  tasks = tasks.map((task) => updatedTasks.find((updated) => updated.id === task.id) || task);
+  lists = lists.filter((list) => list !== listName);
+  delete listColors[listName];
+  if (activeList === listName) activeList = null;
   render();
 }
 
@@ -321,7 +340,7 @@ function showAuth(message = 'Sign in to keep your tasks available on every devic
   authMessage.textContent = message;
   authError.textContent = '';
   authScreen.hidden = false;
-  appShell.hidden = true;
+  document.querySelector('#account-button').textContent = 'Sign in';
 }
 
 authSwitch.addEventListener('click', () => {
@@ -352,17 +371,21 @@ authForm.addEventListener('submit', async (event) => {
   }
 });
 
-document.querySelector('#sign-out').addEventListener('click', async () => { await supabaseClient.auth.signOut(); currentUser = null; showAuth(); });
+document.querySelector('#account-button').addEventListener('click', async () => {
+  if (currentUser) { await supabaseClient.auth.signOut(); currentUser = null; showAuth(); return; }
+  authScreen.hidden = !authScreen.hidden;
+  if (!authScreen.hidden) document.querySelector('#auth-email').focus();
+});
 
 async function startApp(session = null) {
   const activeSession = session || (await supabaseClient.auth.getSession()).data.session;
-  if (!activeSession) { showAuth(); return; }
+  if (!activeSession) { document.querySelector('#account-button').textContent = 'Sign in'; return; }
   currentUser = activeSession.user;
   try {
     await loadData();
     setTheme(localStorage.getItem('task-dashboard-theme') === 'dark');
     authScreen.hidden = true;
-    appShell.hidden = false;
+    document.querySelector('#account-button').textContent = 'Sign out';
     render();
   } catch (error) {
     showAuth(`Could not load your workspace: ${error.message}`);
