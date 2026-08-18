@@ -107,7 +107,7 @@ function dueFilter(date) { return date === today ? 'today' : date > today ? 'upc
 function escapeHtml(value) { return String(value || '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character])); }
 function formatDuration(minutes) { if (minutes < 60) return `${minutes}m`; const hours = Math.floor(minutes / 60); const remainder = minutes % 60; return remainder ? `${hours}h ${remainder}m` : `${hours}h`; }
 function getListColor(list, index = lists.indexOf(list)) { const storedColor = listColors[list]; if (/^#[0-9a-f]{6}$/i.test(storedColor || '')) return storedColor; return list === completedList ? '#5eaa82' : defaultListColors[(index < 0 ? 0 : index) % defaultListColors.length]; }
-function taskInWorkspace(task, workspace = activeWorkspace) { const logicalList = task.done ? (task.previousList || task.list) : task.list; return workspace === 'overview' || (workspace === 'work' ? logicalList === 'Work' : logicalList !== 'Work' && logicalList !== completedList); }
+function taskInWorkspace(task, workspace = activeWorkspace) { const logicalList = task.done ? (task.previousList || task.list) : task.list; return workspace === 'overview' || (workspace === 'work' ? logicalList === 'Work' : ['Wishlist', 'Groceries'].includes(logicalList)); }
 
 function currentVisibleTasks() {
   const query = document.querySelector('#task-search').value.trim().toLowerCase();
