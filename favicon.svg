@@ -1,6 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect width="64" height="64" rx="14" fill="#1e2529"/>
-  <path d="M17 43V29c0-3 2-5 5-5s5 2 5 5v14" fill="none" stroke="#ef735f" stroke-width="6" stroke-linecap="round"/>
-  <path d="M32 43V19c0-3 2-5 5-5s5 2 5 5v24" fill="none" stroke="#dcefe7" stroke-width="6" stroke-linecap="round"/>
-  <path d="M47 43V27c0-3 2-5 5-5" fill="none" stroke="#ef735f" stroke-width="6" stroke-linecap="round"/>
+  <text x="32" y="46" text-anchor="middle" fill="#ef735f" font-family="Georgia,serif" font-size="42" font-weight="700">K</text>
 </svg>

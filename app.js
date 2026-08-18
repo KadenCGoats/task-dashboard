@@ -226,6 +226,7 @@ function renderCalendar() {
 
 function render() {
   renderLists();
+  document.querySelector('.workday-panel').hidden = activeWorkspace === 'personal';
   const workspaceTasks = tasks.filter((task) => taskInWorkspace(task));
   const openTasks = workspaceTasks.filter((task) => !task.done);
   const tabCounts = { all: openTasks.length, today: openTasks.filter((task) => dueFilter(task.dueDate) === 'today').length, upcoming: openTasks.filter((task) => dueFilter(task.dueDate) === 'upcoming').length };
