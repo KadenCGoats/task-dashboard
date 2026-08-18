@@ -362,6 +362,7 @@ authForm.addEventListener('submit', async (event) => {
     const result = isSignUp ? await supabaseClient.auth.signUp({ email, password }) : await supabaseClient.auth.signInWithPassword({ email, password });
     if (result.error) { authError.textContent = result.error.message; return; }
     if (isSignUp && !result.data.session) { authMessage.textContent = 'Check your email to confirm your account, then sign in.'; return; }
+    authScreen.hidden = true;
     await startApp(result.data.session);
   } catch (error) {
     authError.textContent = error.message || 'The request could not be completed. Check your connection and try again.';
