@@ -107,7 +107,8 @@ function dueFilter(date) { return date === today ? 'today' : date > today ? 'upc
 function escapeHtml(value) { return String(value || '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character])); }
 function formatDuration(minutes) { if (minutes < 60) return `${minutes}m`; const hours = Math.floor(minutes / 60); const remainder = minutes % 60; return remainder ? `${hours}h ${remainder}m` : `${hours}h`; }
 function getListColor(list, index = lists.indexOf(list)) { const storedColor = listColors[list]; if (/^#[0-9a-f]{6}$/i.test(storedColor || '')) return storedColor; return list === completedList ? '#5eaa82' : defaultListColors[(index < 0 ? 0 : index) % defaultListColors.length]; }
-function taskInWorkspace(task, workspace = activeWorkspace) { const logicalList = task.done ? (task.previousList || task.list) : task.list; return workspace === 'overview' || (workspace === 'work' ? logicalList === 'Work' : ['Wishlist', 'Groceries'].includes(logicalList)); }
+const personalWorkspaceLists = ['Personal', 'Wishlist', 'Groceries'];
+function taskInWorkspace(task, workspace = activeWorkspace) { const logicalList = task.done ? (task.previousList || task.list) : task.list; return workspace === 'overview' || (workspace === 'work' ? logicalList === 'Work' : personalWorkspaceLists.includes(logicalList)); }
 
 function currentVisibleTasks() {
   const query = document.querySelector('#task-search').value.trim().toLowerCase();
@@ -126,7 +127,7 @@ function currentVisibleTasks() {
 }
 
 function renderLists() {
-  const personalLists = lists.filter((list) => list === 'Wishlist' || list === 'Groceries');
+  const personalLists = lists.filter((list) => personalWorkspaceLists.includes(list));
   const visibleLists = activeWorkspace === 'personal' ? [] : lists.filter((list) => !personalLists.includes(list));
   const listRows = visibleLists.map((list, index) => `<div class="list-row"><label class="list-color-picker" style="background:${getListColor(list, index)}" title="Change ${escapeHtml(list)} color"><input type="color" value="${getListColor(list, index)}" data-color-list="${escapeHtml(list)}" aria-label="Change ${escapeHtml(list)} color"></label><button class="nav-item ${activeList === list ? 'active' : ''}" data-list="${escapeHtml(list)}">${escapeHtml(list)} <b>${tasks.filter((task) => task.list === list && !task.done).length}</b></button><button class="list-edit" data-edit-list="${escapeHtml(list)}" aria-label="Rename ${escapeHtml(list)}">✎</button><button class="list-delete" data-delete-list="${escapeHtml(list)}" aria-label="Delete ${escapeHtml(list)}">×</button></div>`).join('');
   document.querySelector('#list-nav').innerHTML = listRows;
