@@ -26,6 +26,7 @@ let activeList = null;
 let activeWorkspace = 'overview';
 let calendarVisible = false;
 let workspaceNotes = JSON.parse(localStorage.getItem('task-dashboard-workspace-notes') || '{}');
+let workdayMinimized = localStorage.getItem('task-dashboard-workday-minimized') === 'true';
 let editingId = null;
 const priorityRank = { high: 0, medium: 1, low: 2 };
 const taskList = document.querySelector('#task-list');
@@ -251,6 +252,7 @@ function render() {
   renderLists();
   document.body.classList.toggle('personal-workspace', activeWorkspace === 'personal');
   document.querySelector('.workday-panel').hidden = activeWorkspace === 'personal';
+  applyWorkdayMinimizedState();
   const workspaceTasks = tasks.filter((task) => taskInWorkspace(task));
   const openTasks = workspaceTasks.filter((task) => !task.done);
   const tabCounts = { all: openTasks.length, today: openTasks.filter((task) => dueFilter(task.dueDate) === 'today').length, upcoming: openTasks.filter((task) => dueFilter(task.dueDate) === 'upcoming').length };
@@ -282,6 +284,15 @@ function render() {
   }));
   document.querySelectorAll('[data-edit]').forEach((item) => item.addEventListener('click', () => openEditor(Number(item.dataset.edit))));
   document.querySelectorAll('[data-delete]').forEach((button) => button.addEventListener('click', () => deleteTask(Number(button.dataset.delete))));
+}
+
+function applyWorkdayMinimizedState() {
+  const panel = document.querySelector('.workday-panel');
+  const toggle = document.querySelector('#toggle-workday');
+  panel.classList.toggle('minimized', workdayMinimized);
+  toggle.setAttribute('aria-expanded', String(!workdayMinimized));
+  toggle.setAttribute('aria-label', workdayMinimized ? 'Show today’s progress' : 'Minimize today’s progress');
+  toggle.textContent = workdayMinimized ? '+' : '−';
 }
 
 function renderFocusList(tasksToFocus) {
@@ -356,6 +367,7 @@ document.querySelectorAll('[data-view]').forEach((item) => item.addEventListener
   render();
 }));
 document.querySelector('#calendar-toggle').addEventListener('click', () => { calendarVisible = !calendarVisible; setCalendarVisibility(calendarVisible); document.querySelector('#calendar-toggle').textContent = calendarVisible ? 'Tasks' : 'Calendar'; renderCalendar(); });
+document.querySelector('#toggle-workday').addEventListener('click', () => { workdayMinimized = !workdayMinimized; localStorage.setItem('task-dashboard-workday-minimized', String(workdayMinimized)); applyWorkdayMinimizedState(); });
 document.querySelector('#calendar-prev').addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() - 1); renderCalendar(); });
 document.querySelector('#calendar-next').addEventListener('click', () => { calendarDate.setMonth(calendarDate.getMonth() + 1); renderCalendar(); });
 document.querySelector('#calendar-list-filter').addEventListener('change', (event) => { calendarListFilter = event.target.value; renderCalendar(); });
